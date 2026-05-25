@@ -91,6 +91,42 @@ void quicksort(struct sudoku ar[], int baixo, int alto)
     }
 }
 
+int carregarDados(struct sudoku ar[], FILE *arquivo)
+{
+    char linha[200];
+    int qtd = 0;
+    
+    while(fgets(linha, sizeof(linha), arquivo))
+    {
+        sscanf(linha, "%[^,],%s", ar[qtd].puzzle, ar[qtd].solution);
+        qtd++;
+    }
+    
+    return qtd; // a quantidade total de elementos lidos
+}
+
+int removerSudoku(struct sudoku ar[], int *quantidade, char *ipt)
+{
+    // busca Binária para achar a posição do puzzle
+    int indice = BuscaBinaria(ar, *quantidade, ipt);
+
+    // não existe na tabela, retorna 0 (falha)
+    if (indice == -1)
+    {
+        return 0;
+    }
+
+    // shift
+    for (int i = indice; i < (*quantidade) - 1; i++)
+    {
+        ar[i] = ar[i + 1];
+    }
+
+    (*quantidade)--;
+
+    return 1;
+}
+
 int main()
 {
     clock_t tempo_total_inicio = clock();
@@ -123,12 +159,7 @@ int main()
     int quantidade = 0;
 
     lista_inicio = clock();
-    while(fgets(linha, sizeof(linha), arquivo))
-    {
-        sscanf(linha, "%[^,],%s", listaBinaria[quantidade].puzzle, listaBinaria[quantidade].solution);
-
-        quantidade++;
-    }
+    quantidade = carregarDados(listaBinaria, arquivo);
     lista_fim = clock();
 
     fclose(arquivo);
@@ -151,22 +182,29 @@ int main()
     if(achou == -1)
     {
         printf("Não achou nada correspondente.\n");
-        return 1;
+    }
+    else
+    {
+        printf("A solucao eh: %s\n", listaBinaria[achou].solution);
+        
+        // 4. Teste de Remoção Automática (Para provar o funcionamento ao professor)
+        printf("\n[Testando Remocao] Removendo o sudoku que acoramos de encontrar...\n");
+        if (removerSudoku(listaBinaria, &quantidade, input)) 
+        {
+            printf("Sucesso! O sudoku foi removido. Nova quantidade: %d\n", quantidade);
+        }
     }
 
-    printf("A solucao eh: %s", listaBinaria[achou].solution);
-
     free(listaBinaria);
-
     clock_t tempo_total_fim = clock();
 
-    // --- CÁLCULO E EXIBIÇÃO DOS RESULTADOS ---
+    // --- RELATÓRIO DE RUNTIME ---
     printf("\n\n=========================================\n");
     printf("         RELATÓRIO DE RUNTIME\n");
     printf("=========================================\n");
     printf("Tempo para criar a lista:     %f segundos\n", (double)(lista_fim - lista_inicio) / CLOCKS_PER_SEC);
     printf("Tempo para ordenar:           %f segundos\n", (double)(ordenacao_fim - ordenacao_inicio) / CLOCKS_PER_SEC);
-    printf("Tempo para exibir a busca:  %f segundos == inicio : %f == fim : %f ==\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC, (double)busca_inicio / CLOCKS_PER_SEC, (double)busca_fim / CLOCKS_PER_SEC);
+    printf("Tempo da ultima busca:        %f segundos\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC);
     printf("-----------------------------------------\n");
     printf("TEMPO TOTAL DO PROGRAMA:      %f segundos\n", (double)(tempo_total_fim - tempo_total_inicio) / CLOCKS_PER_SEC);
     printf("=========================================\n");
