@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 struct sudoku
@@ -127,8 +128,9 @@ int removerSudoku(struct sudoku ar[], int *quantidade, char *ipt)
     return 1;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    setvbuf(stdout, NULL, _IONBF, 0);
     clock_t tempo_total_inicio = clock();
 
     clock_t lista_inicio, lista_fim;
@@ -147,10 +149,15 @@ int main()
     }
 
     FILE *arquivo = fopen("sudoku.csv", "r");
+    if(arquivo == NULL)
+    {
+        arquivo = fopen("../sudoku.csv", "r"); // Se não achar, tenta na pasta anterior
+    }
 
     if(arquivo == NULL)
     {
         printf("Erro ao abrir arquivo\n");
+        fflush(stdout);
         return 1;
     }
 
@@ -158,53 +165,51 @@ int main()
 
     int quantidade = 0;
 
+    //Medindo tempo de carregamento do .csv:
     lista_inicio = clock();
     quantidade = carregarDados(listaBinaria, arquivo);
     lista_fim = clock();
-
     fclose(arquivo);
+    double tempo_carregamento = (double)(lista_fim - lista_inicio) / CLOCKS_PER_SEC;
 
-    printf("Lidos: %d\n", quantidade);
-
+    //Medindo tempo de ordenacao:
     ordenacao_inicio = clock();
     quicksort(listaBinaria, 0, quantidade - 1);
     ordenacao_fim = clock();
 
-    char input[100];
+    double tempo_ordenacao = (double)(ordenacao_fim - ordenacao_inicio) / CLOCKS_PER_SEC;
 
-    printf("Digite o seu sudoku: ");
-    scanf("%83s", input);
+    // Avisa o Python que a carga e a ordenação terminaram com sucesso!
+    printf("PRONTO\n");
+    fflush(stdout); // CRUCIAL: Força o Windows a enviar o "PRONTO" na mesma hora para o Python!
 
-    busca_inicio = clock();
-    int achou = BuscaBinaria(listaBinaria, quantidade - 1, input);
-    busca_fim = clock();
+   char input[100];
+    // Loop infinito: o programa em C fica vivo esperando perguntas do Python
+    while (scanf("%83s", input) != EOF) 
+    {
+        busca_inicio = clock();
+        int achou = BuscaBinaria(listaBinaria, quantidade, input); 
+        busca_fim = clock();
 
     if(achou == -1)
     {
         printf("Não achou nada correspondente.\n");
+        return 1;
     }
-    else
-    {
-        printf("A solucao eh: %s\n", listaBinaria[achou].solution);
-        
-        // 4. Teste de Remoção Automática (Para provar o funcionamento ao professor)
-        printf("\n[Testando Remocao] Removendo o sudoku que acoramos de encontrar...\n");
-        if (removerSudoku(listaBinaria, &quantidade, input)) 
-        {
-            printf("Sucesso! O sudoku foi removido. Nova quantidade: %d\n", quantidade);
-        }
-    }
+
+    printf("A solucao eh: %s", listaBinaria[achou].solution);
 
     free(listaBinaria);
+
     clock_t tempo_total_fim = clock();
 
-    // --- RELATÓRIO DE RUNTIME ---
+    // --- CÁLCULO E EXIBIÇÃO DOS RESULTADOS ---
     printf("\n\n=========================================\n");
     printf("         RELATÓRIO DE RUNTIME\n");
     printf("=========================================\n");
     printf("Tempo para criar a lista:     %f segundos\n", (double)(lista_fim - lista_inicio) / CLOCKS_PER_SEC);
     printf("Tempo para ordenar:           %f segundos\n", (double)(ordenacao_fim - ordenacao_inicio) / CLOCKS_PER_SEC);
-    printf("Tempo da ultima busca:        %f segundos\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC);
+    printf("Tempo para exibir a busca:  %f segundos == inicio : %f == fim : %f ==\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC, (double)busca_inicio / CLOCKS_PER_SEC, (double)busca_fim / CLOCKS_PER_SEC);
     printf("-----------------------------------------\n");
     printf("TEMPO TOTAL DO PROGRAMA:      %f segundos\n", (double)(tempo_total_fim - tempo_total_inicio) / CLOCKS_PER_SEC);
     printf("=========================================\n");
