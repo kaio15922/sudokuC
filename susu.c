@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
 struct sudoku
@@ -158,6 +157,7 @@ int main(int argc, char *argv[])
     {
         printf("Erro ao abrir arquivo\n");
         fflush(stdout);
+        free(listaBinaria);
         return 1;
     }
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     printf("PRONTO\n");
     fflush(stdout); // CRUCIAL: Força o Windows a enviar o "PRONTO" na mesma hora para o Python!
 
-   char input[100];
+    char input[100];
     // Loop infinito: o programa em C fica vivo esperando perguntas do Python
     while (scanf("%83s", input) != EOF) 
     {
@@ -191,13 +191,16 @@ int main(int argc, char *argv[])
         int achou = BuscaBinaria(listaBinaria, quantidade, input); 
         busca_fim = clock();
 
-    if(achou == -1)
-    {
-        printf("Não achou nada correspondente.\n");
-        return 1;
-    }
-
-    printf("A solucao eh: %s", listaBinaria[achou].solution);
+        if(achou == -1)
+        {
+            printf("Não achou nada correspondente.\n");
+        }
+        else
+        {
+            printf("A solucao eh: %s\n", listaBinaria[achou].solution);
+        }
+        fflush(stdout); // Garante que o Python receba a resposta da busca imediatamente
+    } // <-- Chave adicionada aqui para fechar o loop do scanf corretamente!
 
     free(listaBinaria);
 
@@ -209,7 +212,7 @@ int main(int argc, char *argv[])
     printf("=========================================\n");
     printf("Tempo para criar a lista:     %f segundos\n", (double)(lista_fim - lista_inicio) / CLOCKS_PER_SEC);
     printf("Tempo para ordenar:           %f segundos\n", (double)(ordenacao_fim - ordenacao_inicio) / CLOCKS_PER_SEC);
-    printf("Tempo para exibir a busca:  %f segundos == inicio : %f == fim : %f ==\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC, (double)busca_inicio / CLOCKS_PER_SEC, (double)busca_fim / CLOCKS_PER_SEC);
+    printf("Tempo para exibir a busca:  %f segundos\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC);
     printf("-----------------------------------------\n");
     printf("TEMPO TOTAL DO PROGRAMA:      %f segundos\n", (double)(tempo_total_fim - tempo_total_inicio) / CLOCKS_PER_SEC);
     printf("=========================================\n");
