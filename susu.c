@@ -127,17 +127,19 @@ int removerSudoku(struct sudoku ar[], int *quantidade, char *ipt)
     return 1;
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
+    //Desativa o buffer do c (pode dar erros na hora de passar os dados pro arquivo da interface)
     setvbuf(stdout, NULL, _IONBF, 0);
-    clock_t tempo_total_inicio = clock();
-
+   
+    //Variaveis para determinar efiencia:
     clock_t lista_inicio, lista_fim;
     clock_t ordenacao_inicio, ordenacao_fim;
     clock_t busca_inicio, busca_fim;
 
     int capacidade = 9000000;
 
+    //Tenta criar listaBinaria
     struct sudoku *listaBinaria =
         malloc(capacidade * sizeof(struct sudoku));
 
@@ -147,6 +149,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    //Tenta abrir o arquivo csv
     FILE *arquivo = fopen("sudoku.csv", "r");
     if(arquivo == NULL)
     {
@@ -155,13 +158,11 @@ int main(int argc, char *argv[])
 
     if(arquivo == NULL)
     {
-        printf("Erro ao abrir arquivo\n");
+        printf("ERRO_ARQUIVO\n");
         fflush(stdout);
         free(listaBinaria);
         return 1;
     }
-
-    char linha[200];
 
     int quantidade = 0;
 
@@ -181,41 +182,48 @@ int main(int argc, char *argv[])
 
     // Avisa o Python que a carga e a ordenação terminaram com sucesso!
     printf("PRONTO\n");
-    fflush(stdout); // CRUCIAL: Força o Windows a enviar o "PRONTO" na mesma hora para o Python!
+    fflush(stdout); // Força o Windows a enviar o "PRONTO" na mesma hora para o Python!
 
     char input[100];
-    // Loop infinito: o programa em C fica vivo esperando perguntas do Python
-    while (scanf("%83s", input) != EOF) 
-    {
-        busca_inicio = clock();
-        int achou = BuscaBinaria(listaBinaria, quantidade, input); 
-        busca_fim = clock();
 
-        if(achou == -1)
+    // Loop de escuta do Python
+    while (scanf("%99s", input) != EOF) 
+    {
+        // Se o comando começar com 'R', o Python quer remover
+        if (input[0] == 'R') 
         {
-            printf("Não achou nada correspondente.\n");
-        }
-        else
+            char *puzzle_para_remover = &input[1]; // Pula o 'R' para pegar só os 81 números
+            busca_inicio = clock();
+            int removido = removerSudoku(listaBinaria, &quantidade, puzzle_para_remover);
+            busca_fim = clock();
+
+            if (removido == 1) {
+                printf("REMOVIDO\n");
+            } else {
+                printf("ERRO_REMOVER\n");
+            }
+        } 
+        // Caso contrário, é uma BUSCA normal
+        else 
         {
-            printf("A solucao eh: %s\n", listaBinaria[achou].solution);
+            busca_inicio = clock();
+            int achou = BuscaBinaria(listaBinaria, quantidade, input); 
+            busca_fim = clock();
+
+            if(achou == -1) {
+                printf("ERRO\n");
+            } else {
+                printf("%s\n", listaBinaria[achou].solution);
+            }
         }
-        fflush(stdout); // Garante que o Python receba a resposta da busca imediatamente
-    } // <-- Chave adicionada aqui para fechar o loop do scanf corretamente!
+
+        // Envia os tempos puros por linha para o arquivo .py 
+        printf("%f\n", tempo_carregamento);
+        printf("%f\n", tempo_ordenacao);
+        printf("%f\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC);
+        fflush(stdout);
+    }
 
     free(listaBinaria);
-
-    clock_t tempo_total_fim = clock();
-
-    // --- CÁLCULO E EXIBIÇÃO DOS RESULTADOS ---
-    printf("\n\n=========================================\n");
-    printf("         RELATÓRIO DE RUNTIME\n");
-    printf("=========================================\n");
-    printf("Tempo para criar a lista:     %f segundos\n", (double)(lista_fim - lista_inicio) / CLOCKS_PER_SEC);
-    printf("Tempo para ordenar:           %f segundos\n", (double)(ordenacao_fim - ordenacao_inicio) / CLOCKS_PER_SEC);
-    printf("Tempo para exibir a busca:  %f segundos\n", (double)(busca_fim - busca_inicio) / CLOCKS_PER_SEC);
-    printf("-----------------------------------------\n");
-    printf("TEMPO TOTAL DO PROGRAMA:      %f segundos\n", (double)(tempo_total_fim - tempo_total_inicio) / CLOCKS_PER_SEC);
-    printf("=========================================\n");
-
     return 0;
 }
